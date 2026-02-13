@@ -24,7 +24,7 @@ The server supports a **read-only mode** via the `READ_ONLY` environment variabl
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `MMS_URL` | Base URL of the MMS Layer 1 API | `""` | Yes |
+| `MMS_URL` | Base URL of the MMS Layer 1 API | `http://localhost:8080` | Yes |
 | `READ_ONLY` | Enable read-only mode (only read/query tools) | `true` | No |
 
 ## Docker
@@ -42,7 +42,7 @@ Run with custom MMS URL:
 ```bash
 docker run -d \
   -p 8000:8000 \
-  -e MMS_URL=http://your-mms-server:8080 \
+  -e MMS_URL=https://your-flexo-mms-server \
   flexo-mms-layer1-mcp
 ```
 
@@ -51,17 +51,8 @@ Run in read-write mode (enables create/update/delete operations):
 ```bash
 docker run -d \
   -p 8000:8000 \
-  -e MMS_URL=http://your-mms-server:8080 \
+  -e MMS_URL=https://your-mms-server \
   -e READ_ONLY=false \
-  flexo-mms-layer1-mcp
-```
-
-Run with custom port mapping:
-
-```bash
-docker run -d \
-  -p 9000:8000 \
-  -e MMS_URL=http://your-mms-server:8080 \
   flexo-mms-layer1-mcp
 ```
 
@@ -136,10 +127,6 @@ The server will start on `http://0.0.0.0:8000` using FastMCP's streamable HTTP t
 ## Authentication
 
 The server forwards `Authorization` headers from incoming MCP requests to the MMS API. Ensure your MCP client includes appropriate authentication credentials when making requests.
-
-## API Specification
-
-See `spec.yaml` for the complete OpenAPI specification of the underlying MMS Layer 1 API.
 
 ## License
 
