@@ -3,6 +3,8 @@ FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV MMS_URL=http://localhost:8080
+ENV READ_ONLY=true
+
 # Set the working directory inside the container
 WORKDIR /app
 
