@@ -7,6 +7,7 @@ mcp = FastMCP("MMS Flexo Layer 1 Service")
 
 MMS_URL = os.getenv("MMS_URL", "")
 READ_ONLY = os.getenv("READ_ONLY", "true").lower() == "true"
+MCPPATH = os.getenv("MCPPATH", "/mcp")
 
 def get_auth_header(ctx: Context) -> dict:
     """Extract Authorization header from request context."""
@@ -181,6 +182,50 @@ def register_tools():
         """
         return await make_request("POST", f"/orgs/{org_id}/repos/{repo_id}/query", ctx, sparql_query, "application/sparql-query")
 
+    @mcp.tool()
+    async def read_all_scratches(org_id: str, repo_id: str, ctx: Context) -> str:
+        """Read all scratches in a repository.
+        
+        Args:
+            org_id: The organization ID
+            repo_id: The repository ID
+        """
+        return await make_request("GET", f"/orgs/{org_id}/repos/{repo_id}/scratches", ctx)
+    
+    @mcp.tool()
+    async def read_scratch(org_id: str, repo_id: str, scratch_id: str, ctx: Context) -> str:
+        """Read a specific scratch.
+        
+        Args:
+            org_id: The organization ID
+            repo_id: The repository ID
+            scratch_id: The scratch ID
+        """
+        return await make_request("GET", f"/orgs/{org_id}/repos/{repo_id}/scratches/{scratch_id}", ctx)
+
+    @mcp.tool()
+    async def query_scratch(org_id: str, repo_id: str, scratch_id: str, sparql_query: str, ctx: Context) -> str:
+        """Query the model under the given scratch.
+        
+        Args:
+            org_id: The organization ID
+            repo_id: The repository ID
+            scratch_id: The scratch ID
+            sparql_query: SPARQL 1.1 query string
+        """
+        return await make_request("POST", f"/orgs/{org_id}/repos/{repo_id}/scratches/{scratch_id}/query", ctx, sparql_query, "application/sparql-query")
+    
+    @mcp.tool()
+    async def read_scratch_model(org_id: str, repo_id: str, scratch_id: str, ctx: Context) -> str:
+        """Read the model at the scratch.
+        
+        Args:
+            org_id: The organization ID
+            repo_id: The repository ID
+            scratch_id: The scratch ID
+        """
+        return await make_request("GET", f"/orgs/{org_id}/repos/{repo_id}/scratches/{scratch_id}/graph", ctx)
+
     if not READ_ONLY:
         @mcp.tool()
         async def create_org(org_id: str, body: str, ctx: Context) -> str:
@@ -329,4 +374,4 @@ def register_tools():
 register_tools()
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=8000)
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=8000, path=MCPPATH)
