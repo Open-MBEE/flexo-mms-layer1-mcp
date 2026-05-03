@@ -226,6 +226,37 @@ def register_tools():
         """
         return await make_request("GET", f"/orgs/{org_id}/repos/{repo_id}/scratches/{scratch_id}/graph", ctx)
 
+    @mcp.tool()
+    async def read_collection(org_id: str, collection_id: str, ctx: Context) -> str:
+        """Read a specific collection.
+        
+        Args:
+            org_id: The organization ID
+            collection_id: The sccollection ID
+        """
+        return await make_request("GET", f"/orgs/{org_id}/collections/{collection_id}", ctx)
+
+    @mcp.tool()
+    async def query_collection(org_id: str, collection_id: str, sparql_query: str, ctx: Context) -> str:
+        """Query the model under the given scratch.
+        
+        Args:
+            org_id: The organization ID
+            collection_id: The collection ID
+            sparql_query: SPARQL 1.1 query string
+        """
+        return await make_request("POST", f"/orgs/{org_id}/collections/{collection_id}/query", ctx, sparql_query, "application/sparql-query")
+    
+    @mcp.tool()
+    async def read_collection_model(org_id: str, collection_id: str, ctx: Context) -> str:
+        """Read the model at the scratch.
+        
+        Args:
+            org_id: The organization ID
+            collection_id: The collection ID
+        """
+        return await make_request("GET", f"/orgs/{org_id}/collections/{collection_id}/graph", ctx)
+
     if not READ_ONLY:
         @mcp.tool()
         async def create_org(org_id: str, body: str, ctx: Context) -> str:
