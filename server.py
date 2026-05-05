@@ -227,6 +227,15 @@ def register_tools():
         return await make_request("GET", f"/orgs/{org_id}/repos/{repo_id}/scratches/{scratch_id}/graph", ctx)
 
     @mcp.tool()
+    async def read_all_collections(org_id: str, ctx: Context) -> str:
+        """Read all collections in an org.
+        
+        Args:
+            org_id: The organization ID
+        """
+        return await make_request("GET", f"/orgs/{org_id}/collections", ctx)
+    
+    @mcp.tool()
     async def read_collection(org_id: str, collection_id: str, ctx: Context) -> str:
         """Read a specific collection.
         
@@ -378,7 +387,7 @@ def register_tools():
             Args:
                 org_id: The organization ID
                 collection_id: The collection ID
-                body: RDF content in Turtle format
+                body: RDF content in Turtle format, use <> mms:collects {refs} . to define other branches, locks, or scratches to collect 
             """
             return await make_request("PUT", f"/orgs/{org_id}/collections/{collection_id}", ctx, body, "text/turtle")
 
