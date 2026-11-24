@@ -2,17 +2,54 @@ import os
 from typing import Optional
 import httpx
 from fastmcp import FastMCP, Context
-
-mcp = FastMCP("MMS Flexo Layer 1 Service")
+from fastmcp.server.auth import RemoteAuthProvider
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+from fastmcp.server.dependencies import get_access_token, get_http_request
 
 MMS_URL = os.getenv("MMS_URL", "")
 READ_ONLY = os.getenv("READ_ONLY", "true").lower() == "true"
 MCPPATH = os.getenv("MCPPATH", "/mcp")
 
+# Per-user OAuth via the flexo-mms-sso-auth-service; unset AUTH_ISSUER_URL keeps plain header passthrough.
+AUTH_ISSUER_URL = os.getenv("AUTH_ISSUER_URL", "").rstrip("/")
+MCP_BASE_URL = os.getenv("MCP_BASE_URL", "").rstrip("/")
+JWKS_URL = os.getenv("JWKS_URL", "")
+JWT_ISSUER = os.getenv("JWT_ISSUER", "")
+JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "")
+
+
+def build_auth() -> Optional[RemoteAuthProvider]:
+    """OAuth resource-server config: validate auth-service JWTs and advertise it as authorization server."""
+    if not AUTH_ISSUER_URL:
+        return None
+    if not MCP_BASE_URL:
+        raise ValueError("MCP_BASE_URL must be set when AUTH_ISSUER_URL is set")
+
+    resource_url = f"{MCP_BASE_URL}{MCPPATH}"
+    audiences = [a.strip() for a in JWT_AUDIENCE.split(",") if a.strip()] or [resource_url]
+    verifier = JWTVerifier(
+        jwks_uri=JWKS_URL or f"{AUTH_ISSUER_URL}/.well-known/jwks.json",
+        issuer=JWT_ISSUER or AUTH_ISSUER_URL,
+        audience=audiences if len(audiences) > 1 else audiences[0],
+        algorithm="RS256",
+    )
+    return RemoteAuthProvider(
+        token_verifier=verifier,
+        authorization_servers=[AUTH_ISSUER_URL],
+        base_url=MCP_BASE_URL,
+        resource_name="Flexo MMS Layer 1",
+    )
+
+
+mcp = FastMCP("MMS Flexo Layer 1 Service", auth=build_auth())
+
+
 def get_auth_header(ctx: Context) -> dict:
-    """Extract Authorization header from request context."""
-    headers = ctx.request_context.request.headers
-    auth_header = headers.get("authorization") or headers.get("Authorization")
+    """Authorization header to forward to layer1: the validated bearer token, else the raw header."""
+    access_token = get_access_token()
+    if access_token is not None:
+        return {"Authorization": f"Bearer {access_token.token}"}
+    auth_header = get_http_request().headers.get("authorization")
     if auth_header:
         return {"Authorization": auth_header}
     return {}
